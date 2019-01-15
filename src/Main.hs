@@ -12,14 +12,24 @@ data Particle = Particle {
   velocity :: Point
 } deriving Show
 type Time = Float
-
+type TimeDelta = Float
 
 -- dot product
 (^) :: Point -> Point -> Float
 (w, x) ^ (y, z) = w*y + x*z
 
-(<>) :: Point -> Point -> Point
-(w, x) <> (y, z) = (w + y, x + z)
+
+lift2 :: (a->u) -> (b->v) -> (a,b) -> (u,v)
+lift2 fa fb (a,b) = (fa a, fb b)
+
+instance (Num a, Num b) => Num (a,b) where
+  fromInteger n   = (fromInteger n, fromInteger n)
+  (a,b) + (a',b') = (a+a',b+b')
+  (a,b) - (a',b') = (a-a',b-b')
+  (a,b) * (a',b') = (a*a',b*b')
+  negate = lift2 negate negate
+  abs    = lift2 abs abs
+  signum = lift2 signum signum
 
 require :: (a -> Bool) -> a -> Maybe a
 require condition a
@@ -46,6 +56,17 @@ timeToCollide p0 p1 = soln1 <|> soln2  where
   b = 2*x0^v0 + 2*x1^v1 - 2*x0^v1 - 2*x1^v0 :: Float
   c = x0^x0 + x1^x1 - 2*x0^x1 - (r0 + r1)*(r0 + r1) :: Float
 
+-- TODO: rewrite with lenses? Is that overkill? Probably
+step :: TimeDelta -> [Particle] -> [Particle]
+step delta particles = stepParticle <$> particles where
+  stepParticle :: Particle -> Particle
+  stepParticle (Particle m r pos vel) =
+      Particle m r (pos + (delta, delta)*vel) vel
+
+isColliding :: Particle -> Particle -> Bool
+isColliding p1 p2 = distanceSquared <= radius p1 + radius p2 where
+  distanceSquared = (position p1 - position p2) ^ (position p1 - position p2)
+
 -- Given two particles return Nothing if they will never collide along their
 -- current trajectories or Just (t, p1new, p2new) where t is the amount of time
 -- in the future in which they will collide and p1new, p2new are the new
@@ -66,7 +87,7 @@ simulate = undefined
 
 
 test_p1 :: Particle
-test_p1 = Particle 1 1 (0, 0) (0, 0)
+test_p1 = Particle 1 1 (0, 0)  (0, 0)
 test_p2 :: Particle
 test_p2 = Particle 1 1 (5, 0) (-1, 0)
 main :: IO ()
