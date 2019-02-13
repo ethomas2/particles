@@ -3,33 +3,36 @@ module Main where
 import Data.Maybe
 import Prelude hiding ((^))
 import Control.Applicative ((<|>))
+import Control.Arrow
 
-type Point = (Float, Float)
+
+type Vec = (Float, Float)
 data Particle = Particle {
   mass     :: Float,
   radius   :: Float,
-  position :: Point,
-  velocity :: Point
+  position :: Vec,
+  velocity :: Vec
 } deriving Show
+
+type Box = (Vec, Vec)
+
 type Time = Float
 type TimeDelta = Float
 
+instance (Num a, Num b) => Num (a, b) where
+  (w, x) + (y, z) = (w + y, x + z)
+  (w, x) * (y, z) = (w * y, x * z)
+  (w, x) - (y, z) = (w - y, x - z)
+  abs (x, y)      = (abs x, abs y)
+  signum (x, y)   = (signum x, signum y)
+  fromInteger x   = (fromInteger x, fromInteger x)
+
 -- dot product
-(^) :: Point -> Point -> Float
+(^) :: Vec -> Vec -> Float
 (w, x) ^ (y, z) = w*y + x*z
 
-
-lift2 :: (a->u) -> (b->v) -> (a,b) -> (u,v)
-lift2 fa fb (a,b) = (fa a, fb b)
-
-instance (Num a, Num b) => Num (a,b) where
-  fromInteger n   = (fromInteger n, fromInteger n)
-  (a,b) + (a',b') = (a+a',b+b')
-  (a,b) - (a',b') = (a-a',b-b')
-  (a,b) * (a',b') = (a*a',b*b')
-  negate = lift2 negate negate
-  abs    = lift2 abs abs
-  signum = lift2 signum signum
+(<>) :: Vec -> Vec -> Vec
+(w, x) <> (y, z) = (w + y, x + z)
 
 require :: (a -> Bool) -> a -> Maybe a
 require condition a
@@ -56,23 +59,37 @@ timeToCollide p0 p1 = soln1 <|> soln2  where
   b = 2*x0^v0 + 2*x1^v1 - 2*x0^v1 - 2*x1^v0 :: Float
   c = x0^x0 + x1^x1 - 2*x0^x1 - (r0 + r1)*(r0 + r1) :: Float
 
--- TODO: rewrite with lenses? Is that overkill? Probably
-step :: TimeDelta -> [Particle] -> [Particle]
-step delta particles = stepParticle <$> particles where
-  stepParticle :: Particle -> Particle
-  stepParticle (Particle m r pos vel) =
-      Particle m r (pos + (delta, delta)*vel) vel
 
-isColliding :: Particle -> Particle -> Bool
-isColliding p1 p2 = distanceSquared <= radius p1 + radius p2 where
-  distanceSquared = (position p1 - position p2) ^ (position p1 - position p2)
+stepParticle :: TimeDelta -> Particle -> Particle
+stepParticle dt (Particle m r p v) = Particle m r (p + v*(dt, dt)) v
 
--- Given two particles return Nothing if they will never collide along their
--- current trajectories or Just (t, p1new, p2new) where t is the amount of time
--- in the future in which they will collide and p1new, p2new are the new
--- particles with their new positions/velocities
-collide :: Particle -> Particle -> Maybe (Time, Particle, Particle)
-collide = undefined
+isOverlapping :: Particle -> Particle -> Bool
+isOverlapping p1 p2 = distSquared <= radius p1 + radius p2 where
+  distSquared = (position p1 - position p2) ^ (position p1 - position p2)
+
+
+(-*) :: Float -> Vec -> Vec
+f -* (a, b) = (f*a, f*b)
+
+collide :: Particle -> Particle -> (Particle, Particle)
+collide particle1 particle2 = (particle1', particle2') where
+  (Particle m1 r1 pos1 vel1) = particle1
+  (Particle m2 r2 pos2 vel2) = particle2
+  particle1' = Particle m1 r1 pos1 vel1'
+  particle2' = Particle m1 r1 pos1 vel2'
+  (u1, u2) = (getcomp (-axis) vel1, getcomp axis vel2)
+  v1 = ((m1 - m2)*u1 + (2*m2)*u2) / (m1 + m2)
+  v2 = ((2*m1)*u1 + (m2 - m1)*u2) / (m1 + m2)
+  vel1' = setcomp (-axis) vel1 v1
+  vel2' = setcomp axis vel2 v2
+  axis :: Vec
+  axis = normalize (pos1 - pos2)
+  normalize vec =  (1.0 / sqrt (vec ^ vec)) -* vec
+  getcomp :: Vec -> Vec -> Float
+  getcomp vec axis = vec ^ axis
+  setcomp :: Vec -> Vec -> Float -> Vec
+  setcomp vec axis val = (vec - axis_component) + (val-*axis) where
+    axis_component = (vec ^ axis) -* axis
 
 -- Given a paricle and a wall return Nothing if the particle will never collide
 -- with the wall or Maybe (t, pnew) where t is the amoutn of time in the future
@@ -82,13 +99,11 @@ data Wall = Void
 collideWall :: Particle -> Wall -> Maybe(Time, Particle)
 collideWall = undefined
 
-simulate :: [Particle] -> [(Time, [Particle])]
+simulate :: TimeDelta -> Box -> [Particle] -> [(Time, [Particle])]
 simulate = undefined
 
-
-test_p1 :: Particle
-test_p1 = Particle 1 1 (0, 0)  (0, 0)
-test_p2 :: Particle
-test_p2 = Particle 1 1 (5, 0) (-1, 0)
+p1 = Particle 1 1 (0, 0) (0, 0)
+p2 = Particle 1 1 (-1, -1) (1, 1)
 main :: IO ()
-main = print $ timeToCollide test_p1 test_p2
+main = print $ collide p1 p2
+-- main  = print $ reverse [1, 2, 3, 4, 5]
