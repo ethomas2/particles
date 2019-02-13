@@ -5,7 +5,6 @@ import Prelude hiding ((^))
 import Control.Applicative ((<|>))
 import Control.Arrow
 
-
 type Vec = (Float, Float)
 data Particle = Particle {
   mass     :: Float,
@@ -80,15 +79,15 @@ collide particle1 particle2 = (particle1', particle2') where
   (u1, u2) = (getcomp (-axis) vel1, getcomp axis vel2)
   v1 = ((m1 - m2)*u1 + (2*m2)*u2) / (m1 + m2)
   v2 = ((2*m1)*u1 + (m2 - m1)*u2) / (m1 + m2)
-  vel1' = setcomp (-axis) vel1 v1
-  vel2' = setcomp axis vel2 v2
+  vel1' = set_axis_comp vel1 v1
+  vel2' = set_axis_comp vel2 v2
   axis :: Vec
-  axis = normalize (pos1 - pos2)
+  axis = normalize (pos2 - pos1)
   normalize vec =  (1.0 / sqrt (vec ^ vec)) -* vec
   getcomp :: Vec -> Vec -> Float
   getcomp vec axis = vec ^ axis
-  setcomp :: Vec -> Vec -> Float -> Vec
-  setcomp vec axis val = (vec - axis_component) + (val-*axis) where
+  set_axis_comp :: Vec -> Float -> Vec
+  set_axis_comp vec val = (vec - axis_component) + (val-*axis) where
     axis_component = (vec ^ axis) -* axis
 
 -- Given a paricle and a wall return Nothing if the particle will never collide
