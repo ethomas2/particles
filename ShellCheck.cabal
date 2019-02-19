@@ -22,9 +22,7 @@ Description:
     advanced user's otherwise working script to fail under future circumstances.
 
 Extra-Source-Files:
-    -- documentation
-    README.md
-    shellcheck.1.md
+   shellcheck.1.md
     -- built with a cabal sdist hook
     shellcheck.1
     -- convenience script for stripping tests
