@@ -120,6 +120,7 @@ test-suite test-shellcheck
       mtl >= 2.2.1,
       parsec,
       QuickCheck >= 2.7.4,
-      regex-tdfa
+      regex-tdfa,
+      hspec
     main-is: test/shellcheck.hs
 

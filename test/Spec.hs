@@ -1,7 +1,7 @@
 module Main where
 
-import Test.QuickCheck
 import Test.Hspec
+import Test.QuickCheck
 import Control.Exception (evaluate)
 
 main :: IO ()
