@@ -1,4 +1,4 @@
-.PHONY: watch, lint, run
+.PHONY: watch, lint, run, test
 
 watch:
 	stack build --file-watch
@@ -8,3 +8,6 @@ lint:
 
 run:
 	stack build && stack exec particles
+
+test:
+	stack test

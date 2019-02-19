@@ -4,6 +4,7 @@ import Data.Maybe
 import Prelude hiding ((^))
 import Control.Applicative ((<|>))
 import Control.Arrow
+import qualified Data.Text.IO as T
 
 type Vec = (Float, Float)
 data Particle = Particle {
