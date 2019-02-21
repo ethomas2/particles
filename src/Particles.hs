@@ -1,4 +1,4 @@
-module Main where
+module Particles where
 
 import Data.Maybe
 import Prelude hiding ((^))

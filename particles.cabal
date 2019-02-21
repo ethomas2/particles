@@ -1,17 +1,15 @@
 Name:             particles
 Version:          0.0.0
 Cabal-Version:    1.12
-build-type: Simple
+build-type: Custom
 
 library
     hs-source-dirs: src
-
-executable particles
-  main-is:        Main.hs
-  hs-source-dirs: src
-  build-depends:
-    base >= 4 && < 5,
-    text
+    build-depends:
+      base >= 4 && < 5,
+      text
+    exposed-modules:
+      Particles
 
 test-suite test-particles
     type: exitcode-stdio-1.0
