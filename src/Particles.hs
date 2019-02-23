@@ -1,4 +1,4 @@
-module Particles where
+module Particles (Particle(Particle), (^)) where
 
 import Data.Maybe
 import Prelude hiding ((^))
